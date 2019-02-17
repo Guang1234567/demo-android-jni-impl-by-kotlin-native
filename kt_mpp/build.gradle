@@ -1,0 +1,168 @@
+apply plugin: 'com.android.library'
+
+//apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-multiplatform'
+
+group 'com.example.jni.kt_mpp'
+version '0.0.1'
+
+apply plugin: 'maven-publish'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.0.0-beta01'
+    implementation 'androidx.core:core-ktx:1.0.0-rc02'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.1.0-alpha4'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0-alpha4'
+}
+
+
+kotlin {
+    jvm()
+    js()
+    // For ARM, should be changed to iosArm32 or iosArm64
+    // For Linux, should be changed to e.g. linuxX64
+    // For MacOS, should be changed to e.g. macosX64
+    // For Windows, should be changed to e.g. mingwX64
+    macosX64("macos")
+    android { // android jvm
+
+    }
+    androidNativeArm32("androidJni") { // android jni
+        binaries {
+            sharedLib {
+                baseName = 'foo'
+
+                // Accessing the output file.
+                println("Executable path: ${outputFile.absolutePath}")
+                println(project.android.sourceSets.main.jni.srcDirs)
+                def srcFile = outputFile.getParentFile()
+                def targetJniLibsDir = new File(project.android.sourceSets.debug.jniLibs.srcDirs[0], "armeabi-v7a")
+                if(!debuggable) {
+                    targetJniLibsDir = new File(project.android.sourceSets.release.jniLibs.srcDirs[0], "armeabi-v7a")
+                }
+                def targetJniHeadFilesDir = new File(project.android.sourceSets.debug.jni.srcDirs[0], "include")
+                if(!debuggable) {
+                    targetJniHeadFilesDir = new File(project.android.sourceSets.release.jni.srcDirs[0], "include")
+                }
+
+                linkTask.doLast {
+                    copy {
+                        from srcFile
+                        into targetJniLibsDir
+                        include '*.so'
+                    }
+
+                    /*copy {
+                        from srcFile
+                        into targetJniHeadFilesDir
+                        include '*.h'
+                    }*/
+                }
+
+                preBuild.dependsOn linkTask
+            }
+        }
+    }
+
+    targets.all {
+        compilations.all {
+
+        }
+    }
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation kotlin('stdlib-common')
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation kotlin('test-common')
+                implementation kotlin('test-annotations-common')
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation kotlin('stdlib-jdk8')
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation kotlin('test-js')
+            }
+        }
+        macosMain {
+        }
+        macosTest {
+        }
+
+        androidJniMain {
+
+        }
+        androidJniTest {
+
+        }
+    }
+}
+
+
+// This task attaches native framework built from ios module to Xcode project
+// (see iosApp directory). Don't run this task directly,
+// Xcode runs this task itself during its build process.
+// Before opening the project from iosApp directory in Xcode,
+// make sure all Gradle infrastructure exists (gradle.wrapper, gradlew).
+/*
+task copyFramework {
+    def buildType = project.findProperty('kotlin.build.type') ?: 'DEBUG'
+    dependsOn kotlin.targets.androidJni.compilations.main.linkTaskName('AndroidJni', buildType)
+
+    doLast {
+        def srcFile = kotlin.targets."$target".compilations.main.getBinary('FRAMEWORK', buildType)
+        def targetDir = getProperty('configuration.build.dir')
+        copy {
+            from srcFile.parent
+            into targetDir
+            include 'app.framework/**'
+            include 'app.framework.dSYM'
+        }
+    }
+}
+//*/

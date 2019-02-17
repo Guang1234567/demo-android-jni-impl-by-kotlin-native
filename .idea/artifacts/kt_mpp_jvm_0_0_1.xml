@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="kt_mpp-jvm-0.0.1">
+    <output-path>$PROJECT_DIR$/kt_mpp/build/libs</output-path>
+    <root id="archive" name="kt_mpp-jvm-0.0.1.jar">
+      <element id="module-output" name="kt_mpp_jvmMain" />
+    </root>
+  </artifact>
+</component>
