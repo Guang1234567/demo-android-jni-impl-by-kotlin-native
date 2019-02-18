@@ -41,6 +41,8 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0-alpha4'
 }
 
+// Enable generating Kotlin metadata.
+tasks.compileKotlinMetadata.enabled = true
 
 kotlin {
     jvm()
@@ -60,15 +62,15 @@ kotlin {
 
                 // Accessing the output file.
                 println("Executable path: ${outputFile.absolutePath}")
-                println(project.android.sourceSets.main.jni.srcDirs)
+                def androidSourceSets = project.android.sourceSets
                 def srcFile = outputFile.getParentFile()
-                def targetJniLibsDir = new File(project.android.sourceSets.debug.jniLibs.srcDirs[0], "armeabi-v7a")
+                def targetJniLibsDir = new File(androidSourceSets.debug.jniLibs.srcDirs[0], "armeabi-v7a")
                 if(!debuggable) {
-                    targetJniLibsDir = new File(project.android.sourceSets.release.jniLibs.srcDirs[0], "armeabi-v7a")
+                    targetJniLibsDir = new File(androidSourceSets.release.jniLibs.srcDirs[0], "armeabi-v7a")
                 }
-                def targetJniHeadFilesDir = new File(project.android.sourceSets.debug.jni.srcDirs[0], "include")
+                def targetJniHeadFilesDir = new File(androidSourceSets.debug.jni.srcDirs[0], "include")
                 if(!debuggable) {
-                    targetJniHeadFilesDir = new File(project.android.sourceSets.release.jni.srcDirs[0], "include")
+                    targetJniHeadFilesDir = new File(androidSourceSets.release.jni.srcDirs[0], "include")
                 }
 
                 linkTask.doLast {
@@ -85,7 +87,7 @@ kotlin {
                     }*/
                 }
 
-                preBuild.dependsOn linkTask
+                tasks.preBuild.dependsOn linkTask
             }
         }
     }

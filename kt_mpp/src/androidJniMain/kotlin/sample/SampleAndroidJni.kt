@@ -18,9 +18,11 @@ actual object Platform {
 // kotlin native androidArm32 version
 @CName("Java_sample_JniHelper_stringFromJNI")
 fun stringFromJNI(env: CPointer<JNIEnvVar>, thiz: jobject): jstring {
-    __android_log_print(ANDROID_LOG_INFO.toInt(),
+    __android_log_print(
+        ANDROID_LOG_INFO.convert(),
         "Kn",
-        "This is from Kotlin Native!! ${Platform.name}")
+        "This is from Kotlin Native!! ${Platform.name}"
+    )
     memScoped {
         return env.pointed.pointed!!.NewStringUTF!!.invoke(
             env,
