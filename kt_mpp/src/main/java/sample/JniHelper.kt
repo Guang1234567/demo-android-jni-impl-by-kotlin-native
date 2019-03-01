@@ -8,11 +8,15 @@ class JniHelper {
      */
     external fun stringFromJNI(): String
 
+    external fun stringFromJNI2(): String
+
     companion object {
 
         // Used to load the 'native-lib' library on application startup.
         init {
             System.loadLibrary("foo")
+
+            System.loadLibrary("native-lib")
         }
     }
 }

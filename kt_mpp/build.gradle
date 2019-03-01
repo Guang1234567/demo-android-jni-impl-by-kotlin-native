@@ -20,6 +20,19 @@ android {
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+                abiFilters 'armeabi-v7a'
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/jni/CMakeLists.txt"
+            //def androidJniDir = project.android.sourceSets.main.jni.srcDirs[0]
+            //path "$androidJniDir/CMakeLists.txt"
+        }
     }
 
     buildTypes {
@@ -45,16 +58,26 @@ dependencies {
 tasks.compileKotlinMetadata.enabled = true
 
 kotlin {
-    jvm()
-    js()
     // For ARM, should be changed to iosArm32 or iosArm64
     // For Linux, should be changed to e.g. linuxX64
     // For MacOS, should be changed to e.g. macosX64
     // For Windows, should be changed to e.g. mingwX64
-    macosX64("macos")
-    android { // android jvm
-
+    macosX64("macos") {
+        compilations.main {
+            // Comment to generate Kotlin/Native library (KLIB) instead of executable file:
+            outputKinds("executable")
+            // Change to specify fully qualified name of your application's entry point:
+            entryPoint 'sample.main'
+        }
     }
+    // This is for iPhone emulator
+    // Switch here to iosArm64 (or iosArm32) to build library for iPhone device
+    /*iosArm32("ios") {
+        compilations.main.outputKinds("framework")
+    }*/
+    jvm()
+    js()
+    android("android")// android jvm
     androidNativeArm32("androidJni") { // android jni
         binaries {
             sharedLib {
@@ -65,13 +88,10 @@ kotlin {
                 def androidSourceSets = project.android.sourceSets
                 def srcFile = outputFile.getParentFile()
                 def targetJniLibsDir = new File(androidSourceSets.debug.jniLibs.srcDirs[0], "armeabi-v7a")
-                if(!debuggable) {
+                if (!debuggable) {
                     targetJniLibsDir = new File(androidSourceSets.release.jniLibs.srcDirs[0], "armeabi-v7a")
                 }
-                def targetJniHeadFilesDir = new File(androidSourceSets.debug.jni.srcDirs[0], "include")
-                if(!debuggable) {
-                    targetJniHeadFilesDir = new File(androidSourceSets.release.jni.srcDirs[0], "include")
-                }
+                def targetJniHeadFilesDir = new File(androidSourceSets.main.jni.srcDirs[0], "include")
 
                 linkTask.doLast {
                     copy {
@@ -80,11 +100,11 @@ kotlin {
                         include '*.so'
                     }
 
-                    /*copy {
+                    copy {
                         from srcFile
                         into targetJniHeadFilesDir
                         include '*.h'
-                    }*/
+                    }
                 }
 
                 tasks.preBuild.dependsOn linkTask
@@ -110,6 +130,14 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
+        macosMain {
+        }
+        macosTest {
+        }
+        /*iosMain {
+        }
+        iosTest {
+        }*/
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk8')
@@ -131,11 +159,17 @@ kotlin {
                 implementation kotlin('test-js')
             }
         }
-        macosMain {
+        androidMain {
+            dependencies {
+                implementation kotlin('stdlib')
+            }
         }
-        macosTest {
+        androidTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+            }
         }
-
         androidJniMain {
 
         }
@@ -151,10 +185,10 @@ kotlin {
 // Xcode runs this task itself during its build process.
 // Before opening the project from iosApp directory in Xcode,
 // make sure all Gradle infrastructure exists (gradle.wrapper, gradlew).
-/*
-task copyFramework {
+/*task copyFramework {
     def buildType = project.findProperty('kotlin.build.type') ?: 'DEBUG'
-    dependsOn kotlin.targets.androidJni.compilations.main.linkTaskName('AndroidJni', buildType)
+    def target = project.findProperty('kotlin.target') ?: 'ios'
+    dependsOn kotlin.targets."$target".compilations.main.linkTaskName('FRAMEWORK', buildType)
 
     doLast {
         def srcFile = kotlin.targets."$target".compilations.main.getBinary('FRAMEWORK', buildType)
@@ -166,5 +200,16 @@ task copyFramework {
             include 'app.framework.dSYM'
         }
     }
+}*/
+
+task runMacosProgram {
+    def buildType = 'RELEASE' // Change to 'DEBUG' to run application with debug symbols.
+    dependsOn kotlin.targets.macos.compilations.main.linkTaskName('EXECUTABLE', buildType)
+    doLast {
+        def programFile = kotlin.targets.macos.compilations.main.getBinary('EXECUTABLE', buildType)
+        exec {
+            executable programFile
+            args ''
+        }
+    }
 }
-//*/
